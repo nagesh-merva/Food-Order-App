@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/static/favicon.png">
+    <title>Choose Outlet</title>
+    <link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+    <header>
+        <h1>IT Food&Delivery Wala</h1>
+    </header>
+    <form action="/select_outlet" method="post">
+        <h2>Choose Outlet</h2>
+        <div>
+            <label for="Password">Password: 
+                <input type="password" id="Password" name="password" autocomplete="current-password" required>
+            </label>
+        </div>
+        <div>
+            <input type="radio" id="Mumbai" name="outlet" value="Mumbai" required>
+            <label for="Mumbai">Mumbai Outlet</label>
+        </div>
+        <div>
+            <input type="radio" id="Goa" name="outlet" value="Goa" required>
+            <label for="Goa">Goa Outlet</label>
+        </div>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
+

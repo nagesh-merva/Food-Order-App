@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Heavitas";
+  src: url("./assets/fonts/Heavitas.ttf") format("truetype");
+}
+
+.shadow-top {
+  box-shadow: 0 -10px 10px -10px rgba(0, 0, 0, 0.5);
+}
+
+.cart-expanded {
+  bottom: 0;
+  height: 620px;
+  transition: height 0.3s ease-in-out;
+}
+
+.cart-shrinked {
+  bottom: 0;
+  height: 128px;
+  transition: height 0.3s ease-in-out;
+}
