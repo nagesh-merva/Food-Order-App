@@ -21,7 +21,7 @@ const DisplayOrder = () => {
     }
 
     if (!order) {
-        return <div className=' mx-3 px-5 py-3 bg-white drop-shadow-xl shadow-top'><h1>No order found</h1></div>
+        return
     }
 
     return (

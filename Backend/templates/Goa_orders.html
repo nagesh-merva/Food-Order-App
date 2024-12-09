@@ -30,7 +30,12 @@
                     <button type="submit">Search</button>
                 </form>
                 {% if orders %}
-                    <p>Displaying {{ orders|length }} orders</p>
+                <div id="count-container">
+                    <div id="marquee-div">
+                        <p id="neworder-count">You have not received any new orders</p>
+                        <p>Displaying {{ orders|length }} orders</p>
+                    </div>
+                </div>
                     <div id="ordersList">
                         {% for order in orders %}
                             <div class="order" id="{{ order.orderId }}">
@@ -57,7 +62,7 @@
                                 {% if order.status == 'fulfilled'%}
                                     <span class="fullfilled-message">&#10004; Order Fullfilled</span><br>
                                 {% else %}
-                                    <button id="statusbtn" onclick="orderStatus('{{ order.orderId }}', '{{ order.status }}')">
+                                    <button id="status-{{order.orderId}}" onclick="orderStatus('{{ order.orderId }}', '{{ order.status }}')">
                                         {{ order.status }}
                                     </button>
                                     <button onclick="printReceipt('{{ order.orderId }}')">Print Receipt</button>
@@ -72,21 +77,90 @@
             <div id="orderStats" class="section hidden">
                 <div>
                     <h1>Orders Dashboard</h1>
-                    <canvas id="orderStatsChart" width="400" height="200"></canvas>
-                </div>
-                <div id="topSellingItems" class="chart-container">
+                    <canvas id="orderStatsChart"></canvas>
                     <h2>Top Selling Items</h2>
-                    <canvas id="topSellingItemsChart" width="400" height="400"></canvas>
+                    <canvas id="topSellingItemsChart"></canvas>
                 </div>
             </div>
 
             <div id="manageWebsite" class="section hidden">
                 <h1>Manage Website</h1>
-                <p>Coming Soon...</p>
+                <div class="menu-container">
+                    <h2 id="menu-title">IT Food&Delivery Wala Website Menu</h2>
+                    <div id="menu-items">
+                        {% for category in dishes %}
+                        <div class="category">
+                            <div class="category-header">
+                                <input type="text" value="{{ category.category }}" onchange="updateCategoryName('{{ category.category }}', this.value)" />
+                                <button onclick="deleteCategory('{{ category.category }}')">Delete Category</button>
+                                <button onclick="addSubcategory('{{ category.category }}')">Add Subcategory</button>
+                            </div>
+                            <div class="subcategories">
+                                {% for subcategory, items in category.subcategory.items() %}
+                                <div class="subcategory">
+                                    <div class="subcategory-header">
+                                        <input type="text" value="{{ subcategory }}" onchange="updateSubcategoryName('{{ category.category }}', '{{ subcategory }}', this.value)" />
+                                        <button onclick="deleteSubcategory('{{ category.category }}', '{{ subcategory }}')">Delete Subcategory</button>
+                                    </div>
+                                    <ul>
+                                        {% for item in items %}
+                                        <li class='ul-table bottom-border'>
+                                            <ul class='li-table'>
+                                                <li class='ul-table'>
+                                                    <label>Name:</label>
+                                                    <input type="text" value="{{ item.name }}" onchange="updateItemName('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                                </li>
+                                                <li class='ul-table'>
+                                                    <label>Price:</label>
+                                                    <input type="text" value="{{ item.price }}" onchange="updateItemPrice('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                                </li>
+                                                <li class='ul-table'>
+                                                    <label>Veg/Non-Veg:</label>
+                                                    <input type="text" value="{{ item.veg_nonveg }}" onchange="updateItemType('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                                </li>
+                                            </ul>
+                                            <ul class='li-table'>
+                                                <li class='ul-table'>
+                                                    <label>Image URL:</label>
+                                                    <input type="text" value="{{ item.img }}" onchange="updateImgUrl('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                                </li>
+                                                <li class='ul-table'>
+                                                    <label>Description:</label>
+                                                    <input type="text" value="{{ item.description}}" onchange="updateDescp('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                                </li>
+                                                <li class='ul-table'>
+                                                    <label>Genre:</label>
+                                                    <input type="text" value="{{ item.genre}}" onchange="updateGenre('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                                </li>
+                                                <li class='ul-table'>
+                                                    <button onclick="deleteItem('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}')">Delete Item</button>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        {% endfor %}
+                                        </ul>
+                                    <button onclick="addItem('{{ category.category }}', '{{ subcategory }}')">Add Item</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <button onclick="addCategory()">Add Category</button>
+                    </div>
+                </div>
             </div>
             <div id="settings" class="section hidden">
                 <h1>Settings</h1>
                 <p>Coming Soon...</p>
+            </div>
+            <div id="popup" class="popup-overlay">
+            <div class="popup-content">
+                <span class="close-btn" onclick="closePopup()">&times;</span>
+                <h2 id="popup-title">Add New Item</h2>
+                <div id="popup-body">
+                    <!-- Popup content will be injected here by JavaScript -->
+                </div>
+                <button onclick="submitPopup()">Submit</button>
             </div>
         </div>
     </div>
@@ -142,7 +216,13 @@
             console.log('Disconnected from server')
         })
 
+        let newOrderCount = 0;
+
         socket.on('new_order', function (data) {
+            newOrderCount += 1;
+            const newOrderCountP = document.getElementById('neworder-count')
+            newOrderCountP.textContent = `You got ${newOrderCount} new orders`
+
             if (data.outlet === 'Goa') {
             if (Notification.permission === "granted") {
                 const options = {
@@ -281,22 +361,6 @@
             document.getElementById(sectionId).classList.remove('hidden')
         }
 
-        //async function displayOrderStats() {
-        //    const orders = await fetchOrders()
-        //    const counts = countOrders(orders)
-
-        //    document.getElementById('ordersToday').textContent = counts.todayCount
-        //    document.getElementById('ordersYesterday').textContent = counts.yesterdayCount
-        //    document.getElementById('ordersThisWeek').textContent = counts.thisWeekCount
-        //    document.getElementById('ordersLifetime').textContent = counts.lifetimeCount
-        //    document.getElementById('ordersTodayValue').textContent = counts.todayRevenue.toFixed(2)
-        //    document.getElementById('ordersYesterdayValue').textContent = counts.yesterdayRevenue.toFixed(2)
-        //    document.getElementById('ordersWeekValue').textContent = counts.thisWeekRevenue.toFixed(2)
-        //    document.getElementById('ordersLifetimeValue').textContent = counts.lifetimeRevenue.toFixed(2)
-        //}
-
-        //displayOrderStats() 
-
         function orderStatus(orderId, Status) {
             console.log(orderId)
             const token = localStorage.getItem('jwt_token')
@@ -313,12 +377,16 @@
                 },
                 body: JSON.stringify({ orderId: orderId, status: Status })
             })
-            .then(response => {
-                if (!response.ok) {
-                    const Response = response.json()
-                    alert(Response.error)
-                } else {
+            .then(response => response.json()) 
+            .then(data => {
+                if (data.status === 'success') {
+                    let statusTag = document.getElementById(`status-${orderId}`)
+                    if (statusTag) {
+                        statusTag.textContent = data.newStatus
+                    }
                     alert("Order status updated successfully!")
+                } else {
+                    alert("Failed to update the order status.")
                 }
             })
             .catch(error => {
@@ -581,6 +649,7 @@
                     text: 'Top 10 Selling Items',
                     },
                 },
+                radius: '50%'
                 },
             }
 
@@ -593,6 +662,229 @@
             }
 
             displayTopSellingItemsChart()
+
+        // menu editing
+        function updateCategoryName(oldName, newName) {
+            fetch('/api/update_category_name_web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ oldName, newName })
+            })
+                .then(response => response.json())
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error updating category name:', error));
+        }
+
+        function updateSubcategoryName(categoryName, oldSubcategoryName, newSubcategoryName) {
+            fetch('/api/update_subcategory_name_web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryName, oldSubcategoryName, newSubcategoryName })
+            })
+                .then(response => response.json())
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error updating subcategory name:', error));
+        }
+
+        function updateItemName(categoryName, subcategoryName, oldItemName, newItemName) {
+            fetch('/api/update_item_name_web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryName, subcategoryName, oldItemName, newItemName })
+            })
+                .then(response => response.json())
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error updating item name:', error));
+        }
+
+        function updateItemPrice(categoryName, subcategoryName, itemName, newPrice,) {
+            fetch('/api/update_item_price_web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryName, subcategoryName, itemName, newPrice })
+            })
+                .then(response => response.json())
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error updating item price:', error));
+        }
+
+        function updateItemType(categoryName, subcategoryName, itemName, newType) {
+            fetch('/api/update_item_type_web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryName, subcategoryName, itemName, newType })
+            })
+                .then(response => response.json())
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error updating item type:', error));
+        }
+
+        function updateImgUrl(categoryName, subcategoryName, itemName, newImgUrl, menuType) {
+            fetch('/api/update_imgurl_web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryName, subcategoryName, itemName, newImgUrl, menuType })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(response.statusText)
+                    }
+                    return response.json();
+                })
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error updating item image:', error))
+        }
+
+        function updateDescp(category, subcategory, item, newDesc, menuType) {
+            var data = {
+                'categoryName': category,
+                'subcategoryName': subcategory,
+                'itemName': item,
+                'newDescription': newDesc
+            };
+
+            fetch('/api/update_description_web', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function updateGenre(category, subcategory, item, newGenre, menuType) {
+            var data = {
+                'categoryName': category,
+                'subcategoryName': subcategory,
+                'itemName': item,
+                'newGenre': newGenre
+            };
+
+            fetch('/api/update_genre_web', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function deleteCategory(categoryName, menuType) {
+            fetch('/api/delete_category', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryName, menuType })
+            })
+                .then(response => response.json())
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error deleting category:', error));
+        }
+
+        function deleteSubcategory(categoryName, subcategoryName, menuType) {
+            fetch('/api/delete_subcategory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryName, subcategoryName, menuType })
+            })
+                .then(response => response.json())
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error deleting subcategory:', error));
+        }
+
+        function deleteItem(categoryName, subcategoryName, itemName) {
+            fetch('/api/delete_item_web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryName, subcategoryName, itemName })
+            })
+                .then(response => response.json())
+                .then(data => console.log(data.message))
+                .catch(error => console.error('Error deleting item:', error));
+        }
+
+        function addCategory() {
+            const categoryName = prompt('Enter new category name:');
+            if (categoryName) {
+                fetch('/api/add_category_web', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ categoryName })
+                })
+                    .then(response => response.json())
+                    .then(data => console.log(data.message))
+                    .catch(error => console.error('Error adding category:', error));
+            }
+        }
+
+        function addSubcategory(categoryName) {
+            const subcategoryName = prompt('Enter new subcategory name:');
+            if (subcategoryName) {
+                fetch('/api/add_subcategory_web', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ categoryName, subcategoryName })
+                })
+                    .then(response => response.json())
+                    .then(data => console.log(data.message))
+                    .catch(error => console.error('Error adding subcategory:', error));
+            }
+        }
+
+        function addItem(categoryName, subcategoryName) {
+            const itemName = prompt('Enter new item name:');
+            const itemPrice = prompt('Enter item price:');
+            const itemType = prompt('Enter item type (veg/non-veg):');
+            const itemImage = prompt('Enter item image URL:');
+
+            if (itemName && itemPrice && itemType) {
+                fetch('/api/add_item_web', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ categoryName, subcategoryName, 'newItem': { 'name': itemName, 'price': itemPrice, 'veg_nonveg': itemType, 'img': itemImage, 'genre': '', 'description': '' } })
+                })
+                    .then(response => response.json())
+                    .then(data => console.log(data.message))
+                    .catch(error => console.error('Error adding item:', error));
+            }
+        }
+
+        function closePopup() {
+            const popup = document.getElementById('popup');
+            popup.style.display = 'none';
+        }
+
+        function submitPopup() {
+            const title = document.getElementById('popup-title').textContent;
+            if (title === 'Add New Item') {
+                const itemName = document.querySelector('#popup-body input[name="itemName"]').value;
+                const itemPrice = document.querySelector('#popup-body input[name="itemPrice"]').value;
+                const itemType = document.querySelector('#popup-body input[name="itemType"]').value;
+                const itemImage = document.querySelector('#popup-body input[name="itemImage"]').value;
+
+                if (itemName && itemPrice && itemType) {
+                    fetch('/api/add_item', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ itemName, itemPrice, itemType, itemImage })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data.message);
+                            closePopup(); // Close the popup after submission
+                            displayMenu(currentMenuType); // Refresh the menu
+                        })
+                        .catch(error => console.error('Error adding item:', error));
+                } else {
+                    alert('Please fill in all fields.');
+                }
+            }
+        }
     </script>
 </body>
 </html>

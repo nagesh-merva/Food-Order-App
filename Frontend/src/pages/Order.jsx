@@ -8,7 +8,7 @@ function Order() {
 
     return (
         <CartProvider>
-            <div className=' h-[1000px] bg-slate-50 '>
+            <div className=' h-screen bg-slate-50 '>
                 <OutletProvider>
                     <OrderForm />
                 </OutletProvider>
