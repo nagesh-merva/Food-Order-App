@@ -9,17 +9,26 @@
 </head>
 <body>
     <div class="flex-box">
-        <div>
-            <header>
-                <h1>IT Food&Delivery Wala - Goa Orders</h1>
-                <button id="toggleStatusButton" onclick="toggleStatus()">Turn Off</button>
-            </header>
-            <form id="searchForm">
-                <label for="searchInput">Search:</label>
-                <input type="text" id="searchInput" placeholder="Order ID, Name, or Phone Number">
-                <button type="submit">Search</button>
-            </form>
-            <div class="orders" >
+        <div class="side-panel">
+            <h2>Menu</h2>
+            <ul>
+                <li class="menu-item" onclick="showSection('liveOrders')">Live Orders</li>
+                <li class="menu-item" onclick="showSection('orderStats')">Order Stats</li>
+                <li class="menu-item" onclick="showSection('manageWebsite')">Manage Website</li>
+                <li class="menu-item" onclick="showSection('settings')">Settings</li>
+            </ul>
+        </div>
+        <header>
+            <h1>IT Food&Delivery Wala - Goa Orders</h1>
+            <button id="toggleStatusButton" onclick="toggleStatus()">Turn Off</button>
+        </header>
+        <div id="wrapper">
+            <div id="liveOrders" class="orders section hidden">
+                <form id="searchForm">
+                    <label for="searchInput">Search:</label>
+                    <input type="text" id="searchInput" placeholder="Order ID, Name, or Phone Number">
+                    <button type="submit">Search</button>
+                </form>
                 {% if orders %}
                     <p>Displaying {{ orders|length }} orders</p>
                     <div id="ordersList">
@@ -58,36 +67,36 @@
                     {% else %}
                         <p>No orders found.</p>
                     {% endif %}
-                    </div>
-                </div>
-        </div>
-        <div>
-            <header>
-                <h1>Orders Dashboard</h1>
-            </header>
-            <div id="orderStats">
-                <div>
-                    <h1>Today's Orders: <span id="ordersToday">0</span></h1>
-                    <h1>Today's Orders Revenue: <span id="ordersTodayValue">0</span></h1>
-                </div>
-                <div>
-                    <h1>Yesterday's Orders: <span id="ordersYesterday">0</span></h1>
-                    <h1>Yesterday's Orders Revenue: <span id="ordersYesterdayValue">0</span></h1>
-                </div>
-                <div>
-                    <h1>This Week's Orders: <span id="ordersThisWeek">0</span></h1>
-                    <h1>This Week's Orders Revenue: <span id="ordersWeekValue">0</span></h1>
-                </div>
-                <div>
-                    <h1>Lifetime Orders: <span id="ordersLifetime">0</span></h1>
-                    <h1>Lifetime Orders Revenue: <span id="ordersLifetimeValue">0</span></h1>
                 </div>
             </div>
+            <div id="orderStats" class="section hidden">
+                <div>
+                    <h1>Orders Dashboard</h1>
+                    <canvas id="orderStatsChart" width="400" height="200"></canvas>
+                </div>
+                <div id="topSellingItems" class="chart-container">
+                    <h2>Top Selling Items</h2>
+                    <canvas id="topSellingItemsChart" width="400" height="400"></canvas>
+                </div>
+            </div>
+
+            <div id="manageWebsite" class="section hidden">
+                <h1>Manage Website</h1>
+                <p>Coming Soon...</p>
+            </div>
+            <div id="settings" class="section hidden">
+                <h1>Settings</h1>
+                <p>Coming Soon...</p>
+            </div>
         </div>
+    </div>
+    </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script >
         document.addEventListener('DOMContentLoaded', () => {
+            setupSections()
             getStatus()
             const searchForm = document.getElementById('searchForm')
             searchForm.addEventListener('submit', function(event) {
@@ -96,6 +105,18 @@
                 filterOrders(searchInput)
             })
         })
+
+        function setupSections() {
+            const sections = document.querySelectorAll('.section')
+            sections.forEach(section => section.classList.add('hidden'))
+            document.getElementById('liveOrders').classList.remove('hidden')
+        }
+
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.section')
+            sections.forEach(section => section.classList.add('hidden'))
+            document.getElementById(sectionId).classList.remove('hidden')
+        }
 
         const socket = io()
         const audio = new Audio('/static/beep.mp3')
@@ -248,31 +269,57 @@
             return orders
         }
 
-        async function displayOrderStats() {
-            const orders = await fetchOrders()
-            const counts = countOrders(orders)
-
-            document.getElementById('ordersToday').textContent = counts.todayCount
-            document.getElementById('ordersYesterday').textContent = counts.yesterdayCount
-            document.getElementById('ordersThisWeek').textContent = counts.thisWeekCount
-            document.getElementById('ordersLifetime').textContent = counts.lifetimeCount
-            document.getElementById('ordersTodayValue').textContent = counts.todayRevenue.toFixed(2)
-            document.getElementById('ordersYesterdayValue').textContent = counts.yesterdayRevenue.toFixed(2)
-            document.getElementById('ordersWeekValue').textContent = counts.thisWeekRevenue.toFixed(2)
-            document.getElementById('ordersLifetimeValue').textContent = counts.lifetimeRevenue.toFixed(2)
+        function setupSections() {
+            const sections = document.querySelectorAll('.section')
+            sections.forEach(section => section.classList.add('hidden'))
+            document.getElementById('liveOrders').classList.remove('hidden')
         }
 
-        displayOrderStats()
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.section')
+            sections.forEach(section => section.classList.add('hidden'))
+            document.getElementById(sectionId).classList.remove('hidden')
+        }
+
+        //async function displayOrderStats() {
+        //    const orders = await fetchOrders()
+        //    const counts = countOrders(orders)
+
+        //    document.getElementById('ordersToday').textContent = counts.todayCount
+        //    document.getElementById('ordersYesterday').textContent = counts.yesterdayCount
+        //    document.getElementById('ordersThisWeek').textContent = counts.thisWeekCount
+        //    document.getElementById('ordersLifetime').textContent = counts.lifetimeCount
+        //    document.getElementById('ordersTodayValue').textContent = counts.todayRevenue.toFixed(2)
+        //    document.getElementById('ordersYesterdayValue').textContent = counts.yesterdayRevenue.toFixed(2)
+        //    document.getElementById('ordersWeekValue').textContent = counts.thisWeekRevenue.toFixed(2)
+        //    document.getElementById('ordersLifetimeValue').textContent = counts.lifetimeRevenue.toFixed(2)
+        //}
+
+        //displayOrderStats() 
 
         function orderStatus(orderId, Status) {
             console.log(orderId)
-            alert("Order status updated successfully!")
+            const token = localStorage.getItem('jwt_token')
+            if(token === null || undefined){
+                alert("Your Session has expired, please loggin again")
+                window.location.href = '/'
+                return
+            }
             fetch('/api/status_order_goa', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({orderId: orderId , status : Status}) 
+                body: JSON.stringify({ orderId: orderId, status: Status })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    const Response = response.json()
+                    alert(Response.error)
+                } else {
+                    alert("Order status updated successfully!")
+                }
             })
             .catch(error => {
                 console.error('Error:', error)
@@ -280,33 +327,64 @@
         }
 
         function getStatus() {
-            fetch('/api/Get_goa_status')
-                .then(response => response.json())
-                .then(data => {
-                    const statusButton = document.getElementById('toggleStatusButton')
-                    if (data.status) {
-                        statusButton.textContent = 'Turn Off'
-                        statusButton.classList.remove('off')
-                    } else {
-                        statusButton.textContent = 'Turn On'
-                        statusButton.classList.add('off')
-                    }
-                    currentStatus = data.status
-                })
-                .catch(error => {
-                    console.error('Error:', error)
-                })
+            const token = localStorage.getItem('jwt_token')
+            if(token === null || undefined){
+                alert("Your Session has expired, please loggin again")
+                window.location.href = '/'
+                return
+            }
+            fetch('/api/Get_goa_status',{
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                    if (!response.ok) {
+                    console.error(`HTTP Error: ${response.status}`)
+                    alert("Session Expired! Please Login again.")
+                    window.location.href = '/'
+                    throw new Error('HTTP response not OK')
+                }
+                return response.json()
+            })
+            
+            .then(data => {
+                const statusButton = document.getElementById('toggleStatusButton')
+                if (data.status) {
+                    statusButton.textContent = 'Turn Off'
+                    statusButton.classList.remove('off')
+                } else {
+                    statusButton.textContent = 'Turn On'
+                    statusButton.classList.add('off')
+                }
+                currentStatus = data.status
+            })
+            .catch(error => {
+                console.error('Error:', error)
+            })
         }
 
         function toggleStatus() {
             const status = currentStatus ? 'off' : 'on'
+            const token = localStorage.getItem('jwt_token')
+            if(token === null || undefined){
+                alert("Your Session has expired, please loggin again")
+                window.location.href = '/'
+                return
+            }
             fetch('/api/Update_goa_status', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ status })
             }).then(response => {
+                if(!response.ok){
+                    alert(response.error)
+                    return
+                }
                 if (response.ok) {
                     response.json().then(data => {
                         console.log('Status updated:', data)
@@ -349,6 +427,172 @@
             receiptWindow.document.close()
             receiptWindow.print()
         }
+
+        //stats fororders
+        async function displayOrderStats() {
+            const orders = await fetchOrders()
+            const counts = countOrders(orders)
+
+            const labels = [
+                "Today's Orders",
+                "Yesterday's Orders",
+                "This Week's Orders",
+                "Lifetime Orders",
+            ]
+
+            const dataOrders = [
+                counts.todayCount,
+                counts.yesterdayCount,
+                counts.thisWeekCount,
+                counts.lifetimeCount,
+            ]
+
+            const dataRevenue = [
+                counts.todayRevenue,
+                counts.yesterdayRevenue,
+                counts.thisWeekRevenue,
+                counts.lifetimeRevenue,
+            ]
+            const data = {
+                labels: ["Today's Orders", "Yesterday's Orders", "This Week's Orders", "Lifetime Orders"],
+                datasets: [
+                    {
+                    label: 'Orders',
+                    data: [counts.todayCount, counts.yesterdayCount, counts.thisWeekCount, counts.lifetimeCount],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 1,
+                    type: 'line',
+                    yAxisID: 'y',
+                    },
+                    {
+                    label: 'Revenue',
+                    data: [counts.todayRevenue, counts.yesterdayRevenue, counts.thisWeekRevenue, counts.lifetimeRevenue],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 1, 
+                    yAxisID: 'y1',
+                    },
+                ],
+            }
+
+
+            const config = {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                    title: {
+                        display: true,
+                        text: 'Order Statistics',
+                    },
+                    },
+                    scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                        display: true,
+                        text: 'Orders Count',
+                        },
+                        ticks: {
+                        beginAtZero: true,
+                        },
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                        display: true,
+                        text: 'Revenue (₹)',
+                        },
+                        ticks: {
+                        beginAtZero: true,
+                        callback: function (value) {
+                            return `₹${value.toLocaleString()}`
+                        },
+                        },
+                        grid: {
+                        drawOnChartArea: false,
+                        },
+                    },
+                    },
+                },
+            }
+
+            const ctx = document.getElementById('orderStatsChart').getContext('2d')
+            new Chart(ctx, config)
+        }
+
+        displayOrderStats()
+
+        //top selling
+        function findTopSellingItems(orders) {
+            const itemCounts = {}
+            orders.forEach(order => {
+                order.items.forEach(item => {
+                if (itemCounts[item.name]) {
+                    itemCounts[item.name] += item.quantity;
+                } else {
+                    itemCounts[item.name] = item.quantity;
+                }
+                })
+            })
+
+            const sortedItems = Object.entries(itemCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+
+            const labels = sortedItems.map(item => item[0])
+            const data = sortedItems.map(item => item[1])
+
+            return { labels, data }
+        }
+
+        async function displayTopSellingItemsChart() {
+            const orders = await fetchOrders()
+            const { labels, data } = findTopSellingItems(orders)
+
+            const chartData = {
+                labels,
+                datasets: [
+                {
+                    label: 'Top Selling Items',
+                    data,
+                    backgroundColor: generateRandomColors(data.length), 
+                },
+                ],
+            }
+
+            const config = {
+                type: 'doughnut',
+                data: chartData,
+                options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                    position: 'top',
+                    },
+                    title: {
+                    display: true,
+                    text: 'Top 10 Selling Items',
+                    },
+                },
+                },
+            }
+
+            const ctx = document.getElementById('topSellingItemsChart').getContext('2d')
+            new Chart(ctx, config)
+            }
+
+            function generateRandomColors(count) {
+            return Array.from({ length: count }, () => `hsl(${Math.random() * 360}, 70%, 60%)`)
+            }
+
+            displayTopSellingItemsChart()
     </script>
 </body>
 </html>

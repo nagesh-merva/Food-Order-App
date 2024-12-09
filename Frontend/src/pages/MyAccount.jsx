@@ -33,7 +33,7 @@ function MyAccount() {
     }
 
     const openReviewPage = () => {
-        window.open('https://search.google.com/local/writereview?placeid=ChIJC4txHOe7vzsRGMAxZVoyl8k&source=g.page.m._&laa=merchant-review-solicitation', '_blank');
+        window.open('https://www.linkedin.com/in/nagesh-merva-8b2b57289/', '_blank');
     }
 
     return (

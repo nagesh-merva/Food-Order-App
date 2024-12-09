@@ -266,13 +266,26 @@
 
         function orderStatus(orderId, Status) {
             console.log(orderId)
-            alert("Order status updated successfully!")
+            const token = localStorage.getItem('jwt_token')
+            if(token === null || undefined){
+                alert("Your Session has expired, please loggin again")
+                window.location.href = '/'
+                return
+            }
             fetch('/api/status_order_mumbai', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({orderId: orderId , status : Status}) 
+                body: JSON.stringify({ orderId: orderId, status: Status })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Order status updated successfully!")
+                } else {
+                    alert("Error updating the order status")
+                }
             })
             .catch(error => {
                 console.error('Error:', error)
@@ -280,30 +293,57 @@
         }
 
         function getStatus() {
-            fetch('/api/Get_mumbai_status')
-                .then(response => response.json())
-                .then(data => {
-                    const statusButton = document.getElementById('toggleStatusButton')
-                    if (data.status) {
-                        statusButton.textContent = 'Turn Off'
-                        statusButton.classList.remove('off')
-                    } else {
-                        statusButton.textContent = 'Turn On'
-                        statusButton.classList.add('off')
-                    }
-                    currentStatus = data.status
-                })
-                .catch(error => {
-                    console.error('Error:', error)
-                })
+            const token = localStorage.getItem('jwt_token')
+            if(token === null || undefined){
+                alert("Your Session has expired, please loggin again")
+                window.location.href = '/'
+                return
+            }
+            fetch('/api/Get_mumbai_status',{
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                    if (!response.ok) {
+                    console.error(`HTTP Error: ${response.status}`)
+                    alert("Session Expired! Please Login again.")
+                    window.location.href = '/'
+                    throw new Error('HTTP response not OK')
+                }
+                return response.json()
+            })
+            
+            .then(data => {
+                const statusButton = document.getElementById('toggleStatusButton')
+                if (data.status) {
+                    statusButton.textContent = 'Turn Off'
+                    statusButton.classList.remove('off')
+                } else {
+                    statusButton.textContent = 'Turn On'
+                    statusButton.classList.add('off')
+                }
+                currentStatus = data.status
+            })
+            .catch(error => {
+                console.error('Error:', error)
+            })
         }
 
         function toggleStatus() {
             const status = currentStatus ? 'off' : 'on'
+            const token = localStorage.getItem('jwt_token')
+            if(token === null || undefined){
+                alert("Your Session has expired, please loggin again")
+                window.location.href = '/'
+                return
+            }
             fetch('/api/Update_mumbai_status', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ status })
             }).then(response => {

@@ -1,7 +1,7 @@
 import gevent.monkey
 gevent.monkey.patch_all()
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, url_for, jsonify
 from flask_socketio import SocketIO
 import requests
 from threading import Thread
@@ -10,7 +10,9 @@ from flask_cors import CORS
 import os
 from bson import ObjectId
 import json
-from datetime import datetime
+from datetime import datetime , timedelta, timezone
+import jwt as  pyjwt
+from functools import wraps
 # from twilio.rest import Client
 
 
@@ -22,8 +24,8 @@ class JSONEncoder(json.JSONEncoder):
     
 app = Flask(__name__)
 
-os.environ['PASSWORD'] = 'Nagesh22'
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_secure_default_key')
+os.environ['PASSWORD'] = '1234'
+app.config['SECRET_KEY'] ='QY~\xd2\xa2\x82\x0eD\x8fB\x9f\xbb'
 password = os.environ.get('PASSWORD')
 
 CORS(app, supports_credentials=True, allow_headers="*", origins="*", methods=["OPTIONS", "POST"])
@@ -70,27 +72,57 @@ ALLOWED_PINCODES_MUMBAI = [
     "400014",  # Dadar
 ]
 
+def token_required(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        token = None
+        print("token header", func,request.headers)
+        if 'Authorization' in request.headers:
+            token = request.headers.get('Authorization').split(" ")[1] 
+        else:
+            return jsonify({'error': 'Token is missing or invalid'}), 404
+        try:
+            payload =  pyjwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            print("Decoded payload:", payload)
+        except  pyjwt.ExpiredSignatureError:
+            return jsonify({'redirect_url':url_for('index'),'error':"Session Expired!, Loggin again"}),404
+        except  pyjwt.InvalidTokenError:
+            return jsonify({'redirect_url':url_for('index'),'error':"Invalid Token, Try to loggin again!"}),404
+        
+        return func(*args, **kwargs)
+    return decorated
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/select_outlet', methods=['POST'])
 def select_outlet():
-    entered_password = request.form['password']
-    selected_outlet = request.form['outlet']
-    if entered_password == password:
-        if selected_outlet == 'Goa':
-            return redirect(url_for('goa_orders'))
-        elif selected_outlet == 'Mumbai':
-            return redirect(url_for('mumbai_orders'))
+    data = request.get_json()
+
+    entered_username = data['user']
+    entered_password = data['password']
+    selected_outlet = data['outlet']
+    
+    if entered_username and entered_password == password:
+        token =  pyjwt.encode({
+            'user': entered_username,
+            'outlet': selected_outlet,
+            'exp': datetime.now(timezone.utc) + timedelta(hours=12)
+        }, app.config['SECRET_KEY'], algorithm="HS256")
+        print(token)
+        return jsonify({'token': token, 'redirect_url': url_for(f'{selected_outlet.lower()}_orders')})
     else :
-        return redirect(url_for('index'))
+        return jsonify({'redirect_url':url_for('index'),'error':"Not valid Login !"}), 403
 
 def parse_date(date_str):
     return datetime.strptime(date_str, '%d/%m/%Y, %H:%M:%S')
 
-@app.route('/goa_orders')
+@app.route('/goa_orders',methods=['GET'])
 def goa_orders():
+    headers = request.headers
+    print("Function header",headers)
     orders_cursor = GOA_ORDERS.find().sort('date_created', -1)
     orders = list(orders_cursor)
     
@@ -130,8 +162,10 @@ def goa_orders():
         
     return render_template('goa_orders.html', orders=sorted_orders)
 
-@app.route('/mumbai_orders')
+@app.route('/mumbai_orders', methods=['GET'])
 def mumbai_orders():
+    headers = request.headers
+    print(headers)
     orders_cursor = MUMBAI_ORDERS.find().sort('date_created', -1)
     orders = list(orders_cursor)
     
@@ -169,7 +203,7 @@ def mumbai_orders():
             else:
                 order['total_amount'] = round(total_amount - (total_amount*0.2), 2)
         
-    return render_template('mumbai_orders.html', orders=sorted_orders)
+    return render_template('mumbai_orders.html', orders=sorted_orders )
 
 @app.route('/api/get_menu', methods=['GET'])
 def get_menu():
@@ -404,6 +438,7 @@ def send_whatsapp_message_to_customer(order ,status):
 
 
 @app.route('/api/status_order_goa', methods=['POST'])
+@token_required
 def fulfill_order_Goa():
     
     data = request.json
@@ -429,6 +464,7 @@ def fulfill_order_Goa():
     return jsonify({'status': 'error', 'message': 'Invalid request'}), 400
 
 @app.route('/api/status_order_mumbai', methods=['POST'])
+@token_required
 def fulfill_order_Mumbai():
     
     data = request.json
@@ -441,7 +477,7 @@ def fulfill_order_Mumbai():
         newStatus = 'deliver'
     elif(status == 'deliver'):
         newStatus = 'fulfill'
-    elif(status == 'fullfill'):
+    elif(status == 'fulfill'):
         newStatus = 'fulfilled'
 
     if order_id:
@@ -453,13 +489,15 @@ def fulfill_order_Mumbai():
     return jsonify({'status': 'error', 'message': 'Invalid request'}), 400
 
 @app.route('/api/Get_mumbai_status', methods=['GET'])
+@token_required
 def Get_MUMBAI_STATUS():
     status = MUMBAI_STATUS.find_one({}, {'_id': 0, 'status': 1})
     if status:
-        return jsonify({'status': status['status']})
-    return jsonify({'status': None})
+        return jsonify({'status': status['status']}),200
+    return jsonify({'status': None}),400
 
 @app.route('/api/Update_mumbai_status', methods=['POST'])
+@token_required
 def Update_MUMBAI_STATUS():
     data = request.json
     status = data.get('status')
@@ -472,13 +510,15 @@ def Update_MUMBAI_STATUS():
     return jsonify({'status': 'error', 'message': 'Invalid request'}), 400
 
 @app.route('/api/Get_goa_status', methods=['GET'])
+@token_required
 def Get_GOA_STATUS():
     status = GOA_STATUS.find_one({}, {'_id': 0, 'status': 1})
     if status:
-        return jsonify({'status': status['status']})
-    return jsonify({'status': None})
+        return jsonify({'status': status['status']}),200
+    return jsonify({'status': None}),200
 
 @app.route('/api/Update_goa_status', methods=['POST'])
+@token_required
 def Update_GOA_STATUS():
     data = request.json
     status = data.get('status')
@@ -489,8 +529,6 @@ def Update_GOA_STATUS():
         GOA_STATUS.update_one({}, {'$set': {'status': False}})
         return jsonify({'status': 'success', 'message': 'Goa marked as Off'}), 200
     return jsonify({'status': 'error', 'message': 'Invalid request'}), 400
-
-
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, host='0.0.0.0', port=8080)

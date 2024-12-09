@@ -11,11 +11,16 @@
     <header>
         <h1>IT Food&Delivery Wala</h1>
     </header>
-    <form action="/select_outlet" method="post">
+    <form id="outletForm">
         <h2>Choose Outlet</h2>
         <div>
-            <label for="Password">Password: 
-                <input type="password" id="Password" name="password" autocomplete="current-password" required>
+            <label for="user">Username: 
+                <input type="text" id="user" name="user" required>
+            </label>
+        </div>
+        <div>
+            <label for="password">Password: 
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
             </label>
         </div>
         <div>
@@ -28,6 +33,39 @@
         </div>
         <button type="submit">Submit</button>
     </form>
+
+    <script>
+        document.getElementById("outletForm").addEventListener("submit", async function (event) {
+            event.preventDefault() // Prevent the default form submission
+
+            // Collect form data
+            const username = document.getElementById("user").value
+            const password = document.getElementById("password").value
+            const outlet = document.querySelector('input[name="outlet"]:checked').value
+
+            // Send POST request to the backend
+            try {
+                const response = await fetch("/select_outlet", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ user: username, password: password, outlet: outlet })
+                })
+
+                if(response.ok){
+                    const data = await response.json()
+                    console.log(data)
+                    localStorage.setItem("jwt_token", data.token)
+                    window.location.href = data.redirect_url
+                }
+                else {
+                    throw new Error("Failed to submit the form. Please try again.")
+                }
+            } catch (error) {
+                alert(error.message)
+            }
+        })
+    </script>
 </body>
 </html>
-
