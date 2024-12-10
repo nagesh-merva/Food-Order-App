@@ -102,43 +102,46 @@
                                         <input type="text" value="{{ subcategory }}" onchange="updateSubcategoryName('{{ category.category }}', '{{ subcategory }}', this.value)" />
                                         <button onclick="deleteSubcategory('{{ category.category }}', '{{ subcategory }}')">Delete Subcategory</button>
                                     </div>
-                                    <ul>
+                                    <table id="menu-items-table">
                                         {% for item in items %}
-                                        <li class='ul-table bottom-border'>
-                                            <ul class='li-table'>
-                                                <li class='ul-table'>
-                                                    <label>Name:</label>
-                                                    <input type="text" value="{{ item.name }}" onchange="updateItemName('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
-                                                </li>
-                                                <li class='ul-table'>
-                                                    <label>Price:</label>
-                                                    <input type="text" value="{{ item.price }}" onchange="updateItemPrice('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
-                                                </li>
-                                                <li class='ul-table'>
-                                                    <label>Veg/Non-Veg:</label>
-                                                    <input type="text" value="{{ item.veg_nonveg }}" onchange="updateItemType('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
-                                                </li>
-                                            </ul>
-                                            <ul class='li-table'>
-                                                <li class='ul-table'>
-                                                    <label>Image URL:</label>
-                                                    <input type="text" value="{{ item.img }}" onchange="updateImgUrl('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
-                                                </li>
-                                                <li class='ul-table'>
-                                                    <label>Description:</label>
-                                                    <input type="text" value="{{ item.description}}" onchange="updateDescp('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
-                                                </li>
-                                                <li class='ul-table'>
-                                                    <label>Genre:</label>
-                                                    <input type="text" value="{{ item.genre}}" onchange="updateGenre('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
-                                                </li>
-                                                <li class='ul-table'>
-                                                    <button onclick="deleteItem('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}')">Delete Item</button>
-                                                </li>
-                                            </ul>
-                                        </li>
+                                        <tr>
+                                            <td>
+                                                <label>Name:</label>
+                                                <input type="text" value="{{ item.name }}" onchange="updateItemName('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                            </td>
+                                            <td>
+                                                <label>Price:</label>
+                                                <input type="text" value="{{ item.price }}" onchange="updateItemPrice('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <label>Veg/Non-Veg:</label>
+                                                <input type="text" value="{{ item.type }}" onchange="updateItemType('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                            </td>
+                                            <td>
+                                                <label>Image URL:</label>
+                                                <input type="text" value="{{ item.img }}" onchange="updateImgUrl('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <label>Description:</label>
+                                                <textarea rows="3" onchange="updateDescp('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)">{{ item.description }}</textarea>
+                                            </td>
+                                            <td>
+                                                <label>Genre:</label>
+                                                <input type="text" value="{{ item.genre }}" onchange="updateGenre('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}', this.value)" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2" class="actions-cell">
+                                                <button onclick="deleteItem('{{ category.category }}', '{{ subcategory }}', '{{ item.name }}')">Delete Item</button>
+                                            </td>
+                                        </tr>
                                         {% endfor %}
-                                        </ul>
+                                    </table>
+
                                     <button onclick="addItem('{{ category.category }}', '{{ subcategory }}')">Add Item</button>
                                 </div>
                                 {% endfor %}
@@ -153,17 +156,16 @@
                 <h1>Settings</h1>
                 <p>Coming Soon...</p>
             </div>
-            <div id="popup" class="popup-overlay">
-            <div class="popup-content">
-                <span class="close-btn" onclick="closePopup()">&times;</span>
-                <h2 id="popup-title">Add New Item</h2>
-                <div id="popup-body">
-                    <!-- Popup content will be injected here by JavaScript -->
+            <!-- <div id="popup" class="popup-overlay popup">
+                <div class="popup-content">
+                    <span class="close-btn" onclick="closePopup()">&times;</span>
+                    <h2 id="popup-title">Add New Item</h2>
+                    <div id="popup-body">
+                    </div>
+                    <button onclick="submitPopup()">Submit</button>
                 </div>
-                <button onclick="submitPopup()">Submit</button>
-            </div>
+            </div> -->
         </div>
-    </div>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -846,7 +848,7 @@
                 fetch('/api/add_item_web', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ categoryName, subcategoryName, 'newItem': { 'name': itemName, 'price': itemPrice, 'veg_nonveg': itemType, 'img': itemImage, 'genre': '', 'description': '' } })
+                    body: JSON.stringify({ categoryName, subcategoryName, 'newItem': { 'name': itemName, 'price': itemPrice, 'type': itemType, 'img': itemImage, 'genre': '', 'description': '' } })
                 })
                     .then(response => response.json())
                     .then(data => console.log(data.message))
