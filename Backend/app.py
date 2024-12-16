@@ -165,6 +165,7 @@ def goa_orders():
 def mumbai_orders():
     orders_cursor = MUMBAI_ORDERS.find().sort('date_created', -1)
     orders = list(orders_cursor)
+    dishes = list(WebMenu.find({}, {'_id': 0}))
     
     for order in orders:
         try:
@@ -200,7 +201,7 @@ def mumbai_orders():
             else:
                 order['total_amount'] = round(total_amount - (total_amount*0.2), 2)
         
-    return render_template('mumbai_orders.html', orders=sorted_orders )
+    return render_template('mumbai_orders.html', orders=sorted_orders, dishes =dishes )
 
 @app.route('/api/get_menu', methods=['GET'])
 def get_menu():
