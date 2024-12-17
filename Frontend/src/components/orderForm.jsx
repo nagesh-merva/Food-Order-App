@@ -66,6 +66,7 @@ function OrderForm() {
             pincode,
             paymentMethod,
             selectedOutlet,
+            status: "Order Placed",
             items: order.items,
             totalCost: discountedTotalCost,
             date: new Date().toLocaleString('en-GB')

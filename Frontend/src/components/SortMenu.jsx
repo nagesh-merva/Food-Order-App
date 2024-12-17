@@ -94,7 +94,7 @@ const SortedMenu = () => {
 
     const filteredDishes = searchTerm
         ? Dishes.flatMap(category =>
-            Object.entries(category.subcategory).flatMap(([subcategory, dishes]) =>
+            Object.entries(category.subcategory).flatMap(([dishes]) =>
                 dishes.filter(dish => dish.name.toLowerCase().includes(searchTerm.toLowerCase()))
             )
         )

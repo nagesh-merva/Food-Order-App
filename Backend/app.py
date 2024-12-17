@@ -434,6 +434,35 @@ def send_whatsapp_message_to_customer(order ,status):
         print(f"Failed to send message: {response.status_code}")
         print(response.json())
 
+@app.route('/api/get_order_status', methods=['POST'])
+def getOrderstatus():
+    data = request.json
+
+    response_array = []
+    for order in data:
+        if order['selectedOutlet'] == "Goa":
+            OrderInDB = GOA_ORDERS.find_one({'orderId': order['orderId']})
+        else:
+            OrderInDB = MUMBAI_ORDERS.find_one({'orderId': order['orderId']})
+        
+        if(OrderInDB['status'] == 'accept'):
+            newStatus = 'Order Placed'
+        elif(OrderInDB['status'] == 'deliver'):
+            newStatus = 'Accepted'
+        elif(OrderInDB['status'] == 'fulfill'):
+            newStatus = 'Out for Delivery'
+        elif(OrderInDB['status'] == 'fulfilled'):
+            newStatus = 'Completed'
+            
+        if OrderInDB:
+            response_array.append({
+                'orderId': order['orderId'],
+                'status': newStatus
+            })
+    
+    print(response_array)
+    return jsonify(response_array), 200
+    
 
 @app.route('/api/status_order_goa', methods=['POST'])
 @token_required
@@ -443,7 +472,6 @@ def fulfill_order_Goa():
     order_id = data.get('orderId')
     status = data.get('status')
     order_id = int(order_id)
-    order = GOA_ORDERS.find_one({'orderId': order_id})
 
     if(status == 'accept'):
         newStatus = 'deliver'
@@ -469,7 +497,6 @@ def fulfill_order_Mumbai():
     order_id = data.get('orderId')
     status = data.get('status')
     order_id = int(order_id)
-    order = MUMBAI_ORDERS.find_one({'orderId': order_id})
     
     if(status == 'accept'):
         newStatus = 'deliver'

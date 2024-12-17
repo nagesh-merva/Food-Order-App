@@ -10,6 +10,7 @@ function MyAccount() {
 
     useEffect(() => {
         const storedOrders = JSON.parse(localStorage.getItem('myOrders')) || []
+        fetchOrderStatus()
 
         const convertDate = (dateStr) => {
             const [datePart, timePart] = dateStr.split(', ')
@@ -21,7 +22,43 @@ function MyAccount() {
         setOrders(sortedOrders)
     }, [])
 
-    console.log(orders)
+    const fetchOrderStatus = async () => {
+        try {
+            const storedOrders = JSON.parse(localStorage.getItem('myOrders')) || []
+
+            const pendingOrders = storedOrders
+                .filter(order => order.status !== 'fulfilled')
+                .map(order => ({ orderId: order.orderId, selectedOutlet: order.selectedOutlet }))
+
+            if (pendingOrders.length === 0) {
+                console.log("All orders are fulfilled. No need to fetch.")
+                return
+            }
+
+            const response = await fetch('http://localhost:8080/api/get_order_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(pendingOrders),
+            })
+
+            if (!response.ok) throw new Error('Failed to fetch order status.')
+
+            const responseArray = await response.json()
+
+            const updatedOrders = storedOrders.map(order => {
+                const updatedOrder = responseArray.find(res => res.orderId === order.orderId)
+                return updatedOrder ? { ...order, status: updatedOrder.status } : order
+            });
+
+            localStorage.setItem('myOrders', JSON.stringify(updatedOrders))
+            console.log('Orders updated successfully.')
+
+        } catch (error) {
+            console.error('Error fetching order status:', error)
+        }
+    }
+
 
     const GoBack = () => {
         navigate('/')
@@ -55,7 +92,10 @@ function MyAccount() {
                         {orders.map((order) => (
                             <div key={order.orderId} className="p-5 bg-white shadow rounded-md">
                                 <h2 className="text-xl font-bold mb-3">Order ID: {order.orderId}</h2>
-                                <p className="text-gray-600 mb-3">Date: {(order.date)}</p>
+                                <div className='flex justify-between'>
+                                    <p className="text-gray-600 mb-3">Outlet: {(order.selectedOutlet)}</p>
+                                    <p className="text-gray-600 mb-3">Date: {(order.date)}</p>
+                                </div>
                                 <div className="mb-3">
                                     <h3 className="text-lg font-semibold">Items:</h3>
                                     <ul className="list-disc pl-5">
@@ -70,7 +110,10 @@ function MyAccount() {
                                     </ul>
                                 </div>
                                 <p className="text-lg font-bold">Total Cost: ₹{order.totalCost}</p>
-                                <button onClick={openReviewPage} className='mt-2 px-4 py-1 border-2 border-gray-200 rounded-2xl bg-amber-300 text-md font-poppins font-thin drop-shadow-lg'>Review Order</button>
+                                <div className='mt-2 flex justify-between items-center w-full h-fit px-2 py-2 rounded-full bg-amber-200'>
+                                    <button onClick={openReviewPage} className=' px-4 py-1 border-2 border-gray-200 rounded-2xl bg-amber-300 text-md font-poppins font-thin drop-shadow-lg'>Review Order</button>
+                                    <p className='text-md px-2 font-poppins font-semibold text-black'>Status :{order.status}</p>
+                                </div>
                             </div>
                         ))}
                     </div>
